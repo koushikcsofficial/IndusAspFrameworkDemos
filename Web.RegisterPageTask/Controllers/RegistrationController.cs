@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+using System.Data.Entity;
+using System.Threading.Tasks;
 using System.Web.Mvc;
 using Web.RegisterPageTask.Models;
 
@@ -17,12 +16,14 @@ namespace Web.RegisterPageTask.Controllers
         {
             return View();
         }
+
         [HttpPost]
-        public ActionResult Index(string email,string psw)
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> Index(string email,string psw)
         {
             try
             {
-                if (db.Registrations.Any(data => data.Account_Email == email))
+                if (await db.Registrations.AnyAsync(data=>data.Account_Email==email))
                 {
                     ViewBag.Msg = "Email Already Exists.";
                     return View();
@@ -32,8 +33,10 @@ namespace Web.RegisterPageTask.Controllers
                     Registration reg = new Registration();
                     reg.Account_Email = email;
                     reg.Account_Password = security.HashPassword(psw);
+
                     db.Registrations.Add(reg);
-                    db.SaveChanges();
+                    await db.SaveChangesAsync();
+
                     ViewBag.Msg = "Account Created Successfully";
                     return View();
                 }
@@ -43,6 +46,15 @@ namespace Web.RegisterPageTask.Controllers
                 return View();
             }
             
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 }
